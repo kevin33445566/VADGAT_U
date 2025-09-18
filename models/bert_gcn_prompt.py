@@ -169,7 +169,7 @@ class BERT_GCN_PROMPT(nn.Module):
             self.weight = nn.Parameter(torch.Tensor(opt.bert_dim, opt.bert_dim))
         else:  # dot_product / scaled_dot_product
             self.register_parameter('weight', None)
-        self.wte_enc = nn.Linear(5, 768)
+        self.wte_enc = nn.Linear(5, 768)    #1
 
     def position_weight(self, x, aspect_double_idx, text_len, aspect_len):
         batch_size = x.shape[0]
@@ -210,9 +210,9 @@ class BERT_GCN_PROMPT(nn.Module):
         context, target, adj, adj_o, concat_segments_indices = inputs[0], inputs[1], inputs[2], inputs[3], inputs[4]
         bsz = context.shape[0]
         soft_prompt = torch.randint(5, 120, (bsz,1)).long().cuda()
-        context=torch.concat((context, soft_prompt), dim=1)
-        context=torch.concat((context, target), dim=1)
-        context_len = torch.sum(context != 0, dim=-1)
+        context=torch.concat((context, soft_prompt), dim=1)  # 1
+        context=torch.concat((context, target), dim=1)   #1
+        context_len = torch.sum(context != 0, dim=-1)  #1
 
         context = self.squeeze_embedding(context, context_len)
         context, _ = self.bert(context, return_dict=False)
@@ -252,9 +252,9 @@ class BERT_GCN_PROMPT(nn.Module):
         score_o = F.softmax(score_o, dim=-1)
 
         output = torch.bmm(score, bert_graph_k)  # (n_head*?, q_len, hidden_dim)
-        output = torch.cat(torch.split(output, mb_size, dim=0), dim=-1)  # (?, q_len, n_head*hidden_dim)
+        output = torch.cat(torch.split(output, mb_size, dim=0), dim=-1)  # (?, q_len, n_head*hidden_dim)  #1
         output_o = torch.bmm(score_o, bert_graph_q_o)  # (n_head*?, q_len, hidden_dim)
-        output_o = torch.cat(torch.split(output_o, mb_size, dim=0), dim=-1)  # (?, q_len, n_head*hidden_dim)
+        output_o = torch.cat(torch.split(output_o, mb_size, dim=0), dim=-1)  # (?, q_len, n_head*hidden_dim)  #1
 
         output = self.proj(output)  # (?, q_len, out_dim)
         output_o = self.proj(output_o)
